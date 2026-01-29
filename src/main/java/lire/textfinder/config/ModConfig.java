@@ -15,15 +15,15 @@ public class ModConfig {
     private static final File CONFIG_FILE = new File(FabricLoader.getInstance().getConfigDir().toFile(), "textfinder.json");
 
     // 配置项定义
-    private int maxsearchamountpertick = 100;
-    private boolean withbaritone = false;
-    private boolean withclientcommands = false;
-    private int outputcomplexity = 2; // 1=simple, 2=normal, 3=complex, 4=debug
-    private int debugpgt = 4;
-    private int cglowtime = 60;
-    private String cglowcolor = "white";
-    private boolean firstlaunch = false; // 首次启动标识
-    private int searchrange = 12; // 搜索范围
+    private int maxSearchAmountPerTick = 100; // 修正变量名驼峰
+    private boolean withBaritone = false;
+    private boolean withClientCommands = false;
+    private int outputComplexity = 2; // 1=simple, 2=normal, 3=complex, 4=debug
+    private int debugPgt = 4;
+    private int cglowTime = 60;
+    private String cglowColor = "white";
+    private boolean firstLaunch = false; // 首次启动标识
+    private int searchRange = 12; // 搜索范围（修正变量名驼峰）
 
     public static ModConfig load() {
         ModConfig config = new ModConfig();
@@ -33,9 +33,9 @@ public class ModConfig {
                 config = GSON.fromJson(reader, ModConfig.class);
 
                 // 首次启动或配置异常时重置为默认值
-                if (config.firstlaunch) {
+                if (config.firstLaunch) {
                     config = new ModConfig();
-                    config.firstlaunch = false;
+                    config.firstLaunch = false;
                     config.save();
                 }
             } catch (IOException e) {
@@ -58,84 +58,100 @@ public class ModConfig {
         }
     }
 
-    // 最大每tick搜索数量
-    public int getmaxsearchamountpertick() {
-        return Math.max(1, Math.min(255, maxsearchamountpertick));
+    // 最大每tick搜索数量（修正方法名为标准驼峰）
+    public int getMaxSearchAmountPerTick() {
+        return Math.max(1, Math.min(255, maxSearchAmountPerTick));
     }
 
-    public void setmaxsearchamountpertick(int value) {
-        this.maxsearchamountpertick = Math.max(1, Math.min(255, value));
+    public void setMaxSearchAmountPerTick(int value) {
+        this.maxSearchAmountPerTick = Math.max(1, Math.min(255, value));
     }
 
     // Baritone集成开关
-    public boolean iswithbaritone() {
-        return withbaritone;
+    public boolean isWithBaritone() {
+        return withBaritone;
     }
 
-    public void setwithbaritone(boolean withbaritone) {
-        this.withbaritone = withbaritone;
+    public void setWithBaritone(boolean withBaritone) {
+        this.withBaritone = withBaritone;
     }
 
     // 客户端指令集成开关
-    public boolean iswithclientcommands() {
-        return withclientcommands;
+    public boolean isWithClientCommands() {
+        return withClientCommands;
     }
 
-    public void setwithclientcommands(boolean withclientcommands) {
-        this.withclientcommands = withclientcommands;
+    public void setWithClientCommands(boolean withClientCommands) {
+        this.withClientCommands = withClientCommands;
     }
 
-    // 输出复杂度
-    public int getoutputcomplexity() {
-        return Math.max(1, Math.min(4, outputcomplexity));
+    // 输出复杂度（修正方法名为标准驼峰）
+    public int getOutputComplexity() {
+        return Math.max(1, Math.min(4, outputComplexity));
     }
 
-    public void setoutputcomplexity(int outputcomplexity) {
-        this.outputcomplexity = Math.max(1, Math.min(4, outputcomplexity));
+    public void setOutputComplexity(int outputComplexity) {
+        this.outputComplexity = Math.max(1, Math.min(4, outputComplexity));
     }
 
     // 调试信息间隔
-    public int getdebugpgt() {
-        return Math.max(1, Math.min(255, debugpgt));
+    public int getDebugPgt() {
+        return Math.max(1, Math.min(255, debugPgt));
     }
 
-    public void setdebugpgt(int debugpgt) {
-        this.debugpgt = Math.max(1, Math.min(255, debugpgt));
+    public void setDebugPgt(int debugPgt) {
+        this.debugPgt = Math.max(1, Math.min(255, debugPgt));
     }
 
     // 发光时间
-    public int getcglowtime() {
-        return cglowtime;
+    public int getCglowTime() {
+        return cglowTime;
     }
 
-    public void setcglowtime(int cglowtime) {
-        this.cglowtime = cglowtime;
+    public void setCglowTime(int cglowTime) {
+        this.cglowTime = cglowTime;
     }
 
     // 发光颜色
-    public String getcglowcolor() {
-        return cglowcolor;
+    public String getCglowColor() {
+        return cglowColor;
     }
 
-    public void setcglowcolor(String cglowcolor) {
-        this.cglowcolor = cglowcolor;
+    public void setCglowColor(String cglowColor) {
+        this.cglowColor = cglowColor;
     }
 
     // 首次启动标识
-    public boolean isfirstlaunch() {
-        return firstlaunch;
+    public boolean isFirstLaunch() {
+        return firstLaunch;
     }
 
-    public void setfirstlaunch(boolean firstlaunch) {
-        this.firstlaunch = firstlaunch;
+    public void setFirstLaunch(boolean firstLaunch) {
+        this.firstLaunch = firstLaunch;
     }
 
-    // 搜索范围
+    // 搜索范围（修正方法名为标准驼峰）
+    public int getSearchRange() {
+        return Math.max(1, Math.min(32, searchRange));
+    }
+
+    public void setSearchRange(int searchRange) {
+        this.searchRange = Math.max(1, Math.min(32, searchRange));
+    }
+
+    // 兼容旧配置的降级方法（可选，保证旧配置文件仍能读取）
+    @Deprecated
+    public int getmaxsearchamountpertick() {
+        return getMaxSearchAmountPerTick();
+    }
+
+    @Deprecated
+    public int getoutputcomplexity() {
+        return getOutputComplexity();
+    }
+
+    @Deprecated
     public int getsearchrange() {
-        return Math.max(1, Math.min(32, searchrange));
-    }
-
-    public void setsearchrange(int searchrange) {
-        this.searchrange = Math.max(1, Math.min(32, searchrange));
+        return getSearchRange();
     }
 }

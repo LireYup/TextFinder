@@ -42,16 +42,16 @@ public class ClientEventHandler {
      * 处理调试模式下的进度输出
      */
     private static void handleDebugOutput(SignSearchManager searchManager, MinecraftClient client) {
-        // 根据输出复杂度判断是否显示调试信息（4对应Debug模式）
-        int outputcomplexity = Integer.parseInt(String.valueOf(TextFinder.config.getoutputcomplexity()));
-        if (outputcomplexity == 4 && client.player != null) {
-            int debuginterval = TextFinder.config.getdebugpgt();
-            int totalchecked = searchManager.getTotalSignsChecked();
+        // 修复：调用标准驼峰方法名
+        int outputComplexity = TextFinder.config.getOutputComplexity();
+        if (outputComplexity == 4 && client.player != null) {
+            int debugInterval = TextFinder.config.getDebugPgt();
+            int totalChecked = searchManager.getTotalSignsChecked();
 
-            if (totalchecked % debuginterval == 0 && totalchecked > 0) {
+            if (totalChecked % debugInterval == 0 && totalChecked > 0) {
                 int found = searchManager.getFoundSigns().size();
                 client.player.sendMessage(
-                        Text.literal("已找到" + found + "/" + totalchecked + "个告示牌"),
+                        Text.literal("已找到" + found + "/" + totalChecked + "个告示牌"),
                         false
                 );
             }

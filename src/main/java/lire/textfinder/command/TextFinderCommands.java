@@ -8,7 +8,6 @@ import net.minecraft.text.Text;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument;
-// 修改导入为greedyString
 import static com.mojang.brigadier.arguments.StringArgumentType.greedyString;
 
 public class TextFinderCommands {

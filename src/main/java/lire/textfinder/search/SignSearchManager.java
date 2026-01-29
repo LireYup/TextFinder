@@ -77,8 +77,8 @@ public class SignSearchManager {
         BlockPos playerPos = client.player.getBlockPos();
         ChunkPos playerChunkPos = new ChunkPos(playerPos);
 
-        // 1.21.7兼容方案：使用默认渲染距离8
-        int renderDistance = 8;
+        // 修复：调用标准驼峰方法名
+        int renderDistance = TextFinder.config.getSearchRange();
 
         // 搜索玩家周围一定范围内的区块
         for (int x = -renderDistance; x <= renderDistance; x++) {
@@ -120,8 +120,8 @@ public class SignSearchManager {
             return;
         }
 
-        // 修正配置方法调用（全小写方法名）
-        int maxpertick = TextFinder.config.getmaxsearchamountpertick();
+        // 修复：调用标准驼峰方法名
+        int maxpertick = TextFinder.config.getMaxSearchAmountPerTick();
         int processedthistick = 0;
 
         // 遍历区块
@@ -246,11 +246,11 @@ public class SignSearchManager {
             return;
         }
 
-        // 读取数字类型的输出复杂度（关键修复：适配配置中的3/4等级）
+        // 修复：调用标准驼峰方法名
         int complexity;
         try {
-            complexity = Integer.parseInt(String.valueOf(TextFinder.config.getoutputcomplexity()));
-        } catch (NumberFormatException e) {
+            complexity = TextFinder.config.getOutputComplexity();
+        } catch (Exception e) {
             complexity = 2; // 默认简单模式
         }
 
@@ -289,53 +289,74 @@ public class SignSearchManager {
             sb.append(" §7").append(truncateText(firstLine, 20));
         }
 
-        // 复杂度3及以上：显示多行文本和颜色
+        // 复杂度3及以上：显示更多文本行和基础信息
         if (complexity >= 3) {
-            if (!sign.getFrontTexts().get(1).getString().isEmpty()) {
-                sb.append(" / ").append(truncateText(sign.getFrontTexts().get(1).getString(), 15));
+            sb.append("\n  §8正面文本: ");
+            for (int i = 0; i < sign.getFrontTexts().size(); i++) {
+                String line = sign.getFrontTexts().get(i).getString();
+                if (!line.isEmpty()) {
+                    sb.append(line).append(" | ");
+                }
             }
-            sb.append(" §6[颜色: ").append(sign.getFrontColor()).append("]");
+            sb.append("\n  §8背面文本: ");
+            for (int i = 0; i < sign.getBackTexts().size(); i++) {
+                String line = sign.getBackTexts().get(i).getString();
+                if (!line.isEmpty()) {
+                    sb.append(line).append(" | ");
+                }
+            }
+            sb.append("\n  §8发光状态: 正面=").append(sign.isFrontGlowing()).append(" 背面=").append(sign.isBackGlowing());
         }
 
-        // 复杂度4及以上：显示发光状态和方块类型
+        // 复杂度4（调试模式）：显示完整信息
         if (complexity >= 4) {
-            sb.append(" §d[发光: ").append(sign.isFrontGlowing() ? "是" : "否").append("]");
-            sb.append(" §f[").append(sign.getState().getBlock().getName().getString()).append("]");
+            sb.append("\n  §8方块ID: ").append(sign.getBlockId())
+                    .append(" §8颜色: 正面=").append(sign.getFrontColor()).append(" 背面=").append(sign.getBackColor());
         }
 
         return Text.literal(sb.toString());
     }
 
     /**
-     * 截断长文本
+     * 截断文本到指定长度
      */
     private String truncateText(String text, int maxLength) {
-        return text.length() > maxLength ? text.substring(0, maxLength) + "..." : text;
+        if (text.length() <= maxLength) {
+            return text;
+        }
+        return text.substring(0, maxLength - 3) + "...";
     }
 
-    // Getters
+    /**
+     * 清除已找到的告示牌列表
+     */
+    public void clearFoundSigns() {
+        foundSigns.clear();
+        totalSignsChecked = 0;
+        totalSignsProcessed = 0;
+        nextBlockEntityIndex = 0;
+        chunkIterator = null;
+        isSearching = false;
+    }
+
+    // ----------------- 通用Getter方法 -----------------
+    public boolean isSearching() {
+        return isSearching;
+    }
+
     public List<SignData> getFoundSigns() {
-        return new ArrayList<>(foundSigns);
+        return new ArrayList<>(foundSigns); // 返回副本避免并发修改
     }
 
     public int getTotalSignsChecked() {
         return totalSignsChecked;
     }
 
-    public boolean isSearching() {
-        return isSearching;
+    public int getTotalSignsProcessed() {
+        return totalSignsProcessed;
     }
 
     public String getCurrentSearchContext() {
         return currentSearchContext;
-    }
-
-    /**
-     * 清除所有找到的告示牌（进入世界或开始新搜索时调用）
-     */
-    public void clearFoundSigns() {
-        foundSigns.clear();
-        totalSignsChecked = 0;
-        totalSignsProcessed = 0;
     }
 }
