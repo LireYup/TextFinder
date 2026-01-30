@@ -18,8 +18,8 @@ public class ModConfig {
     private int maxSearchAmountPerTick = 256; // 默认值改为256，驼峰命名
     private int outputComplexity = 2; // 1=simple, 2=normal, 3=complex, 4=debug
     private int debugPgt = 4;
-    private int cGlowTime = 60;
-    private String cGlowColor = "white";
+    private int cGlowTime = 60; // 发光秒数
+    private String cGlowColor = "white"; // 发光颜色
     private boolean firstLaunch = false; // 首次启动标识
     private int searchRange = 12; // 搜索范围
     private boolean cGlow = false; // 新增配置项：发光开关（驼峰命名）
