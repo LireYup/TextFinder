@@ -3,81 +3,79 @@ package lire.textfinder.command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
-import lire.textfinder.TextFinder;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.text.Text; // 仅保留核心Text导入即可
-import net.minecraft.util.math.BlockPos;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import lire.textfinder.search.SignSearchManager;
+import net.minecraft.text.Text;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
-
-import java.util.List;
+import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
+import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument;
+// 修改导入为greedyString
+import static com.mojang.brigadier.arguments.StringArgumentType.greedyString;
 
 public class TextFinderCommand {
+
     public static void register(CommandDispatcher<FabricClientCommandSource> dispatcher) {
-        dispatcher.register(ClientCommandManager.literal("trf")
-                .then(ClientCommandManager.argument("text", StringArgumentType.string())
-                        .executes(context -> executeTextFind(context, StringArgumentType.getString(context, "text")))));
+        // 主指令节点
+        dispatcher.register(literal("textfinder")
+                .then(literal("search")
+                        .then(argument("keyword", greedyString())  // 修改为greedyString
+                                .executes(TextFinderCommand::searchCommand)))
+                .then(literal("display")
+                        .executes(TextFinderCommand::displayCommand))
+                .then(literal("refilter")
+                        .then(argument("newKeyword", greedyString())  // 修改为greedyString
+                                .executes(TextFinderCommand::refilterCommand)))
+                .then(literal("clear")
+                        .executes(TextFinderCommand::clearCommand)));
 
-        dispatcher.register(ClientCommandManager.literal("td")
-                .executes(TextFinderCommand::executeDebugFind));
+        // 简写指令
+        dispatcher.register(literal("tf")
+                .then(argument("keyword", greedyString())  // 修改为greedyString
+                        .executes(TextFinderCommand::searchCommand)));
+
+        dispatcher.register(literal("td")
+                .executes(TextFinderCommand::displayCommand));
+
+        dispatcher.register(literal("trf")
+                .then(argument("newKeyword", greedyString())  // 修改为greedyString
+                        .executes(TextFinderCommand::refilterCommand)));
     }
 
-    private static int executeTextFind(CommandContext<FabricClientCommandSource> context, String targetText) {
+    private static int searchCommand(CommandContext<FabricClientCommandSource> context) {
+        String keyword = StringArgumentType.getString(context, "keyword");
         FabricClientCommandSource source = context.getSource();
-        ClientPlayerEntity player = source.getPlayer();
 
-        List<BlockPos> targetBlocks = findBlocksByText(player, targetText);
+        source.getPlayer();
 
-        if (TextFinder.config.isCGlow()) {
-            triggerBlockGlow(player, targetBlocks);
-            // 修复：直接传Text对象
-            Text successMsg = Text.literal("已为" + targetBlocks.size() + "个方块添加发光效果！");
-            source.sendFeedback(successMsg);
-        }
-
+        SignSearchManager.getInstance().startSearch(keyword);
+        source.sendFeedback(Text.literal("§a开始搜索告示牌中的 '").append(keyword).append("'..."));
         return 1;
     }
 
-    private static int executeDebugFind(CommandContext<FabricClientCommandSource> context) {
+    // 关键修复：调用新的outputSearchResults方法，直接传入命令源
+    private static int displayCommand(CommandContext<FabricClientCommandSource> context) {
         FabricClientCommandSource source = context.getSource();
-        ClientPlayerEntity player = source.getPlayer();
+        SignSearchManager manager = SignSearchManager.getInstance();
 
-        List<BlockPos> targetBlocks = findDebugBlocks(player);
-
-        if (TextFinder.config.isCGlow()) {
-            triggerBlockGlow(player, targetBlocks);
-            // 修复：直接传Text对象
-            Text debugMsg = Text.literal("调试模式：已为" + targetBlocks.size() + "个方块添加发光效果！");
-            source.sendFeedback(debugMsg);
-        }
-
+        // 直接调用管理器的输出方法，传入命令源
+        manager.outputSearchResults(source);
         return 1;
     }
 
-    private static void triggerBlockGlow(ClientPlayerEntity player, List<BlockPos> blocks) {
-        if (blocks.isEmpty() || player == null) return;
+    private static int refilterCommand(CommandContext<FabricClientCommandSource> context) {
+        String newKeyword = StringArgumentType.getString(context, "newKeyword");
+        FabricClientCommandSource source = context.getSource();
 
-        int glowSeconds = TextFinder.config.getCGlowTime();
-        String glowColor = TextFinder.config.getCGlowColor();
+        SignSearchManager manager = SignSearchManager.getInstance();
+        manager.refilterSigns(newKeyword);
 
-        for (BlockPos pos : blocks) {
-            String glowCommand = String.format(
-                    "/cglow block %d %d %d %d color %s",
-                    pos.getX(), pos.getY(), pos.getZ(),
-                    glowSeconds, glowColor
-            );
-            Text commandText = Text.literal(glowCommand);
-            // 主线程执行避免指令堆积
-            MinecraftClient.getInstance().execute(() -> player.sendMessage(commandText, false));
-        }
+        source.sendFeedback(Text.literal("§a已用新关键词 '").append(newKeyword).append("' 重新筛选结果"));
+        return displayCommand(context);
     }
 
-    private static List<BlockPos> findBlocksByText(ClientPlayerEntity player, String targetText) {
-        return List.of();
-    }
-
-    private static List<BlockPos> findDebugBlocks(ClientPlayerEntity player) {
-        return List.of(player.getBlockPos());
+    private static int clearCommand(CommandContext<FabricClientCommandSource> context) {
+        FabricClientCommandSource source = context.getSource();
+        SignSearchManager.getInstance().clearFoundSigns();
+        source.sendFeedback(Text.literal("§a已清除所有搜索结果"));
+        return 1;
     }
 }
