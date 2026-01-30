@@ -14,16 +14,15 @@ public class ModConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final File CONFIG_FILE = new File(FabricLoader.getInstance().getConfigDir().toFile(), "textfinder.json");
 
-    // 配置项定义
-    private int maxSearchAmountPerTick = 100; // 修正变量名驼峰
-    private boolean withBaritone = false;
-    private boolean withClientCommands = false;
+    // 配置项定义（严格小驼峰）
+    private int maxSearchAmountPerTick = 256; // 默认值改为256，驼峰命名
     private int outputComplexity = 2; // 1=simple, 2=normal, 3=complex, 4=debug
     private int debugPgt = 4;
-    private int cglowTime = 60;
-    private String cglowColor = "white";
+    private int cGlowTime = 60;
+    private String cGlowColor = "white";
     private boolean firstLaunch = false; // 首次启动标识
-    private int searchRange = 12; // 搜索范围（修正变量名驼峰）
+    private int searchRange = 12; // 搜索范围
+    private boolean cGlow = false; // 新增配置项：发光开关（驼峰命名）
 
     public static ModConfig load() {
         ModConfig config = new ModConfig();
@@ -33,9 +32,9 @@ public class ModConfig {
                 config = GSON.fromJson(reader, ModConfig.class);
 
                 // 首次启动或配置异常时重置为默认值
-                if (config.firstLaunch) {
+                if (config.isFirstLaunch()) {
                     config = new ModConfig();
-                    config.firstLaunch = false;
+                    config.setFirstLaunch(false);
                     config.save();
                 }
             } catch (IOException e) {
@@ -58,34 +57,16 @@ public class ModConfig {
         }
     }
 
-    // 最大每tick搜索数量（修正方法名为标准驼峰）
+    // 最大每tick搜索数量（驼峰+范围1~10000）
     public int getMaxSearchAmountPerTick() {
-        return Math.max(1, Math.min(255, maxSearchAmountPerTick));
+        return Math.max(1, Math.min(10000, maxSearchAmountPerTick));
     }
 
     public void setMaxSearchAmountPerTick(int value) {
-        this.maxSearchAmountPerTick = Math.max(1, Math.min(255, value));
+        this.maxSearchAmountPerTick = Math.max(1, Math.min(10000, value));
     }
 
-    // Baritone集成开关
-    public boolean isWithBaritone() {
-        return withBaritone;
-    }
-
-    public void setWithBaritone(boolean withBaritone) {
-        this.withBaritone = withBaritone;
-    }
-
-    // 客户端指令集成开关
-    public boolean isWithClientCommands() {
-        return withClientCommands;
-    }
-
-    public void setWithClientCommands(boolean withClientCommands) {
-        this.withClientCommands = withClientCommands;
-    }
-
-    // 输出复杂度（修正方法名为标准驼峰）
+    // 输出复杂度
     public int getOutputComplexity() {
         return Math.max(1, Math.min(4, outputComplexity));
     }
@@ -104,21 +85,21 @@ public class ModConfig {
     }
 
     // 发光时间
-    public int getCglowTime() {
-        return cglowTime;
+    public int getCGlowTime() {
+        return cGlowTime;
     }
 
-    public void setCglowTime(int cglowTime) {
-        this.cglowTime = cglowTime;
+    public void setCGlowTime(int cGlowTime) {
+        this.cGlowTime = cGlowTime;
     }
 
     // 发光颜色
-    public String getCglowColor() {
-        return cglowColor;
+    public String getCGlowColor() {
+        return cGlowColor;
     }
 
-    public void setCglowColor(String cglowColor) {
-        this.cglowColor = cglowColor;
+    public void setCGlowColor(String cGlowColor) {
+        this.cGlowColor = cGlowColor;
     }
 
     // 首次启动标识
@@ -130,7 +111,7 @@ public class ModConfig {
         this.firstLaunch = firstLaunch;
     }
 
-    // 搜索范围（修正方法名为标准驼峰）
+    // 搜索范围
     public int getSearchRange() {
         return Math.max(1, Math.min(32, searchRange));
     }
@@ -139,19 +120,12 @@ public class ModConfig {
         this.searchRange = Math.max(1, Math.min(32, searchRange));
     }
 
-    // 兼容旧配置的降级方法（可选，保证旧配置文件仍能读取）
-    @Deprecated
-    public int getmaxsearchamountpertick() {
-        return getMaxSearchAmountPerTick();
+    // 发光开关（新增配置项）
+    public boolean isCGlow() {
+        return cGlow;
     }
 
-    @Deprecated
-    public int getoutputcomplexity() {
-        return getOutputComplexity();
-    }
-
-    @Deprecated
-    public int getsearchrange() {
-        return getSearchRange();
+    public void setCGlow(boolean cGlow) {
+        this.cGlow = cGlow;
     }
 }
