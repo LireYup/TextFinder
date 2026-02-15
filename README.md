@@ -1,4 +1,4 @@
-##This mod is completely coded by AI
+### This mod is completely coded by AI
 
 # TextFinder Minecraft Mod
 
