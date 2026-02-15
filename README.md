@@ -1,3 +1,5 @@
+###This mod is completely coded by AI
+
 # TextFinder Minecraft Mod
 
 TextFinder is a Fabric mod for Minecraft 1.21.11 that helps players search through text on signs more efficiently. Tired of manually scrolling through multiple signs to find specific text? This mod makes it easier!
