@@ -234,7 +234,7 @@ public class SignSearchManager {
      * 输出搜索结果到命令源（根据数字类型的输出复杂度）
      * 复杂度等级：1=极简(仅坐标)，2=简单(坐标+首行文本)，3=详细(坐标+多行文本)，4=调试(全信息+进度)
      */
-    public void outputSearchResults(FabricClientCommandSource source) {
+    public void outputSearchResults(FabricClientCommandSource source, int page) {
         if (isSearching()) {
             source.sendFeedback(Text.literal("§e搜索正在进行中... 已检查 " + getTotalSignsChecked() + " 个告示牌"));
             return;
@@ -259,16 +259,25 @@ public class SignSearchManager {
             source.sendFeedback(Text.literal("已找到" + results.size() + "/" + totalSignsChecked + "个告示牌"));
         }
 
-        source.sendFeedback(Text.literal("§a找到 " + results.size() + " 个匹配的告示牌:"));
-        int displayCount = Math.min(results.size(), 10);
+        int pageSize = 10;
+        int totalResults = results.size();
+        int startIndex = (page - 1) * pageSize;
+        int endIndex = Math.min(startIndex + pageSize, totalResults);
 
-        for (int index = 0; index < displayCount; index++) {
+        if (startIndex >= totalResults) {
+            source.sendFeedback(Text.literal("§e页数超出范围"));
+            return;
+        }
+
+        source.sendFeedback(Text.literal("§a找到 " + totalResults + " 个匹配的告示牌 (第" + page + "页):"));
+
+        for (int index = startIndex; index < endIndex; index++) {
             SignData sign = results.get(index);
             source.sendFeedback(formatSignText(sign, index + 1, complexity));
         }
 
-        if (results.size() > 10) {
-            source.sendFeedback(Text.literal("§e还有 " + (results.size() - 10) + " 个结果未显示"));
+        if (endIndex < totalResults) {
+            source.sendFeedback(Text.literal("§e还有 " + (totalResults - endIndex) + " 个结果未显示，使用 /td " + (page + 1) + " 查看下一页"));
         }
     }
 
@@ -289,29 +298,29 @@ public class SignSearchManager {
             sb.append(" §7").append(truncateText(firstLine, 20));
         }
 
-        // 复杂度3及以上：显示更多文本行和基础信息
+        // 复杂度3及以上：显示更多文本行
         if (complexity >= 3) {
-            sb.append("\n  §8正面文本: ");
+            sb.append("\n  §f正面文本: ");
             for (int i = 0; i < sign.getFrontTexts().size(); i++) {
                 String line = sign.getFrontTexts().get(i).getString();
                 if (!line.isEmpty()) {
                     sb.append(line).append(" | ");
                 }
             }
-            sb.append("\n  §8背面文本: ");
+            sb.append("\n  §f背面文本: ");
             for (int i = 0; i < sign.getBackTexts().size(); i++) {
                 String line = sign.getBackTexts().get(i).getString();
                 if (!line.isEmpty()) {
                     sb.append(line).append(" | ");
                 }
             }
-            sb.append("\n  §8发光状态: 正面=").append(sign.isFrontGlowing()).append(" 背面=").append(sign.isBackGlowing());
         }
 
         // 复杂度4（调试模式）：显示完整信息
         if (complexity >= 4) {
-            sb.append("\n  §8方块ID: ").append(sign.getBlockId())
-                    .append(" §8颜色: 正面=").append(sign.getFrontColor()).append(" 背面=").append(sign.getBackColor());
+            sb.append("\n  §f发光状态: 正面=").append(sign.isFrontGlowing()).append(" 背面=").append(sign.isBackGlowing());
+            sb.append("\n  §f方块ID: ").append(sign.getBlockId())
+                    .append(" §f颜色: 正面=").append(sign.getFrontColor()).append(" 背面=").append(sign.getBackColor());
         }
 
         return Text.literal(sb.toString());
@@ -360,3 +369,4 @@ public class SignSearchManager {
         return currentSearchContext;
     }
 }
+

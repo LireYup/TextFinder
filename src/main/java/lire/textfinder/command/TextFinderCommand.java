@@ -2,6 +2,7 @@ package lire.textfinder.command;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import lire.textfinder.search.SignSearchManager;
 import net.minecraft.text.Text;
@@ -33,7 +34,9 @@ public class TextFinderCommand {
                         .executes(TextFinderCommand::searchCommand)));
 
         dispatcher.register(literal("td")
-                .executes(TextFinderCommand::displayCommand));
+                .executes(TextFinderCommand::displayCommand)
+                .then(argument("page", IntegerArgumentType.integer(1))
+                        .executes(TextFinderCommand::displayCommand)));
 
         dispatcher.register(literal("trf")
                 .then(argument("newKeyword", greedyString())  // 修改为greedyString
@@ -56,8 +59,15 @@ public class TextFinderCommand {
         FabricClientCommandSource source = context.getSource();
         SignSearchManager manager = SignSearchManager.getInstance();
 
-        // 直接调用管理器的输出方法，传入命令源
-        manager.outputSearchResults(source);
+        int page = 1;
+        try {
+            page = IntegerArgumentType.getInteger(context, "page");
+        } catch (IllegalArgumentException e) {
+            // 如果没有提供 page 参数，使用默认值 1
+        }
+
+        // 直接调用管理器的输出方法，传入命令源和页数
+        manager.outputSearchResults(source, page);
         return 1;
     }
 
