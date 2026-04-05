@@ -1,0 +1,22 @@
+{
+  "textfinder.command.search.start": "开始搜索告示牌中的 '%s'...",
+  "textfinder.command.refilter.success": "已用新关键词 '%s' 重新筛选结果",
+  "textfinder.command.clear.success": "已清除所有搜索结果",
+  "textfinder.command.display.searching": "搜索正在进行中... 已检查 %d 个告示牌",
+  "textfinder.command.display.signs_checked": " 个告示牌",
+  "textfinder.command.display.no_results": "未找到匹配的告示牌",
+  "textfinder.command.display.found_progress": "找到 %d/%d 个匹配的告示牌",
+  "textfinder.command.display.max_per_tick": "每tick处理 %d 个告示牌",
+  "textfinder.command.display.found": "找到 %d 个匹配的告示牌",
+  "textfinder.command.display.results_header": " (第%d页):",
+  "textfinder.command.display.found_with_page": "找到 %d/%d 个匹配的告示牌（第%d页）",
+  "textfinder.command.display.page_out_of_range": "页数超出范围",
+  "textfinder.command.display.more_results": "还有 %d 个结果未显示，使用 /td %d 查看下一页",
+  "textfinder.display.coordinate": "坐标: ",
+  "textfinder.display.front_text": "正面文本: ",
+  "textfinder.display.back_text": "背面文本: ",
+  "textfinder.display.glow_status": "发光状态: 正面=%s 背面=%s",
+  "textfinder.display.block_id": "方块ID: ",
+  "textfinder.display.color": "颜色: 正面=%s 背面=%s",
+  "textfinder.search.completed": "找到 %d 个匹配的告示牌"
+}

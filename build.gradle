@@ -75,3 +75,11 @@ publishing {
 		// retrieving dependencies.
 	}
 }
+
+loom {
+	runs {
+		client {
+			vmArgs("-Xmx1G", "-Xms512M")
+		}
+	}
+}

@@ -4,7 +4,9 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
+import lire.textfinder.TextFinder;
 import lire.textfinder.search.SignSearchManager;
+import lire.textfinder.I18nHelper;
 import net.minecraft.text.Text;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
@@ -41,6 +43,10 @@ public class TextFinderCommand {
         dispatcher.register(literal("trf")
                 .then(argument("newKeyword", greedyString())  // 修改为greedyString
                         .executes(TextFinderCommand::refilterCommand)));
+
+        // 测试指令：/ttest - 输出当前配置的全部项
+        dispatcher.register(literal("ttest")
+                .executes(TextFinderCommand::ttestCommand));
     }
 
     private static int searchCommand(CommandContext<FabricClientCommandSource> context) {
@@ -50,7 +56,7 @@ public class TextFinderCommand {
         source.getPlayer();
 
         SignSearchManager.getInstance().startSearch(keyword);
-        source.sendFeedback(Text.literal("§a开始搜索告示牌中的 '").append(keyword).append("'..."));
+        source.sendFeedback(Text.literal(I18nHelper.translate("textfinder.command.search.start", keyword)));
         return 1;
     }
 
@@ -78,14 +84,32 @@ public class TextFinderCommand {
         SignSearchManager manager = SignSearchManager.getInstance();
         manager.refilterSigns(newKeyword);
 
-        source.sendFeedback(Text.literal("§a已用新关键词 '").append(newKeyword).append("' 重新筛选结果"));
+        source.sendFeedback(Text.literal(I18nHelper.translate("textfinder.command.refilter.success", newKeyword)));
         return displayCommand(context);
     }
 
     private static int clearCommand(CommandContext<FabricClientCommandSource> context) {
         FabricClientCommandSource source = context.getSource();
         SignSearchManager.getInstance().clearFoundSigns();
-        source.sendFeedback(Text.literal("§a已清除所有搜索结果"));
+        source.sendFeedback(Text.literal(I18nHelper.translate("textfinder.command.clear.success")));
+        return 1;
+    }
+
+    private static int ttestCommand(CommandContext<FabricClientCommandSource> context) {
+        FabricClientCommandSource source = context.getSource();
+        if (TextFinder.config == null) {
+            source.sendFeedback(Text.literal("&b[TextFinder]&cConfig is not loaded"));
+            return 1;
+        }
+
+        // 输出配置的各项值
+        source.sendFeedback(Text.literal("maxSearchAmountPerTick: " + TextFinder.config.getMaxSearchAmountPerTick()));
+        source.sendFeedback(Text.literal("outputComplexity: " + TextFinder.config.getOutputComplexity()));
+        source.sendFeedback(Text.literal("debugPgt: " + TextFinder.config.getDebugPgt()));
+        source.sendFeedback(Text.literal("cGlowTime: " + TextFinder.config.getCGlowTime()));
+        source.sendFeedback(Text.literal("cGlowColor: " + TextFinder.config.getCGlowColor()));
+        source.sendFeedback(Text.literal("searchRange: " + TextFinder.config.getSearchRange()));
+
         return 1;
     }
 }

@@ -1,0 +1,22 @@
+{
+  "textfinder.command.search.start": "Starting search for signs containing '%s'...",
+  "textfinder.command.refilter.success": "Refiltered results with new keyword '%s'",
+  "textfinder.command.clear.success": "Cleared all search results",
+  "textfinder.command.display.searching": "Search in progress... Checked %d signs",
+  "textfinder.command.display.signs_checked": " signs",
+  "textfinder.command.display.no_results": "No matching signs found",
+  "textfinder.command.display.found_progress": "Found %d/%d signs.",
+  "textfinder.command.display.max_per_tick": "Processing %d signs per tick",
+  "textfinder.command.display.found": "Found %d matching signs",
+  "textfinder.command.display.results_header": " (Page %d):",
+  "textfinder.command.display.found_with_page": "Found %d/%d matching signs (Page %d)",
+  "textfinder.command.display.page_out_of_range": "Page number out of range",
+  "textfinder.command.display.more_results": "There are %d more results not shown, use /td %d to view next page",
+  "textfinder.display.coordinate": "Coordinate: ",
+  "textfinder.display.front_text": "Front text: ",
+  "textfinder.display.back_text": "Back text: ",
+  "textfinder.display.glow_status": "Glow status: Front=%s Back=%s",
+  "textfinder.display.block_id": "Block ID: ",
+  "textfinder.display.color": "Color: Front=%s Back=%s",
+  "textfinder.search.completed": "Found %d matching signs"
+}

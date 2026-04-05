@@ -20,9 +20,7 @@ public class ModConfig {
     private int debugPgt = 4;
     private int cGlowTime = 60; // 发光秒数
     private String cGlowColor = "white"; // 发光颜色
-    private boolean firstLaunch = false; // 首次启动标识
     private int searchRange = 12; // 搜索范围
-    private boolean cGlow = false; // 新增配置项：发光开关（驼峰命名）
 
     public static ModConfig load() {
         ModConfig config = new ModConfig();
@@ -31,14 +29,10 @@ public class ModConfig {
             try (FileReader reader = new FileReader(CONFIG_FILE)) {
                 config = GSON.fromJson(reader, ModConfig.class);
 
-                // 首次启动或配置异常时重置为默认值
-                if (config.isFirstLaunch()) {
-                    config = new ModConfig();
-                    config.setFirstLaunch(false);
-                    config.save();
-                }
+                // 配置异常时重置为默认值（不再使用 firstLaunch 标记）
+                // 如果 file 中的内容无法正确解析，会在 catch 块重写默认配置
             } catch (IOException e) {
-                TextFinder.LOGGER.error("加载配置文件失败", e);
+                TextFinder.LOGGER.error("[TextFinder]Failed to load config file", e);
                 config = new ModConfig();
                 config.save();
             }
@@ -53,35 +47,35 @@ public class ModConfig {
         try (FileWriter writer = new FileWriter(CONFIG_FILE)) {
             GSON.toJson(this, writer);
         } catch (IOException e) {
-            TextFinder.LOGGER.error("保存配置文件失败", e);
+            TextFinder.LOGGER.error("[TextFinder]Failed to save config file", e);
         }
     }
 
     // 最大每tick搜索数量（驼峰+范围1~10000）
     public int getMaxSearchAmountPerTick() {
-        return Math.max(1, Math.min(10000, maxSearchAmountPerTick));
+        return Math.clamp(maxSearchAmountPerTick, 1, 10000);
     }
 
     public void setMaxSearchAmountPerTick(int value) {
-        this.maxSearchAmountPerTick = Math.max(1, Math.min(10000, value));
+        this.maxSearchAmountPerTick = Math.clamp(value, 1, 10000);
     }
 
     // 输出复杂度
     public int getOutputComplexity() {
-        return Math.max(1, Math.min(4, outputComplexity));
+        return Math.clamp(outputComplexity, 1, 4);
     }
 
     public void setOutputComplexity(int outputComplexity) {
-        this.outputComplexity = Math.max(1, Math.min(4, outputComplexity));
+        this.outputComplexity = Math.clamp(outputComplexity, 1, 4);
     }
 
     // 调试信息间隔
     public int getDebugPgt() {
-        return Math.max(1, Math.min(255, debugPgt));
+        return Math.clamp(debugPgt, 1, 255);
     }
 
     public void setDebugPgt(int debugPgt) {
-        this.debugPgt = Math.max(1, Math.min(255, debugPgt));
+        this.debugPgt = Math.clamp(debugPgt, 1, 255);
     }
 
     // 发光时间
@@ -102,30 +96,12 @@ public class ModConfig {
         this.cGlowColor = cGlowColor;
     }
 
-    // 首次启动标识
-    public boolean isFirstLaunch() {
-        return firstLaunch;
-    }
-
-    public void setFirstLaunch(boolean firstLaunch) {
-        this.firstLaunch = firstLaunch;
-    }
-
     // 搜索范围
     public int getSearchRange() {
-        return Math.max(1, Math.min(32, searchRange));
+        return Math.clamp(searchRange, 1, 32);
     }
 
     public void setSearchRange(int searchRange) {
-        this.searchRange = Math.max(1, Math.min(32, searchRange));
-    }
-
-    // 发光开关（新增配置项）
-    public boolean isCGlow() {
-        return cGlow;
-    }
-
-    public void setCGlow(boolean cGlow) {
-        this.cGlow = cGlow;
+        this.searchRange = Math.clamp(searchRange, 1, 32);
     }
 }

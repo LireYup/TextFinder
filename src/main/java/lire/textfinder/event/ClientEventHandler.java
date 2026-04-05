@@ -50,8 +50,9 @@ public class ClientEventHandler {
 
             if (totalChecked % debugInterval == 0 && totalChecked > 0) {
                 int found = searchManager.getFoundSigns().size();
+                // Use translatable text so the message is localized (was hardcoded Chinese)
                 client.player.sendMessage(
-                        Text.literal("已找到" + found + "/" + totalChecked + "个告示牌"),
+                        Text.translatable("textfinder.command.display.found_progress", found, totalChecked),
                         false
                 );
             }

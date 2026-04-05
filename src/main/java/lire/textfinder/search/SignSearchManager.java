@@ -1,5 +1,6 @@
 package lire.textfinder.search;
 
+import lire.textfinder.I18nHelper;
 import lire.textfinder.TextFinder;
 import lire.textfinder.data.SignData;
 import net.minecraft.block.BlockState;
@@ -27,7 +28,6 @@ public class SignSearchManager {
     // 存储所有检测过的告示牌总数（用于调试输出）
     private int totalSignsChecked = 0;
     // 所有检测过的告示牌总数（用于进度显示）
-    private int totalSignsProcessed = 0;
     // 当前搜索上下文
     private String currentSearchContext = "";
     // 搜索是否正在进行中
@@ -104,7 +104,6 @@ public class SignSearchManager {
     public void resetSearch() {
         foundSigns.clear();
         totalSignsChecked = 0;
-        totalSignsProcessed = 0; // 重置总处理数
         currentSearchContext = "";
         isSearching = false;
         chunkIterator = null;
@@ -131,7 +130,6 @@ public class SignSearchManager {
             // 获取区块中的所有方块实体
             List<BlockEntity> blockEntities = new ArrayList<>(chunk.getBlockEntities().values());
             int entitycount = blockEntities.size();
-            totalSignsProcessed += entitycount; // 累加总处理数
 
             // 遍历方块实体
             while (nextBlockEntityIndex < entitycount && processedthistick < maxpertick) {
@@ -171,7 +169,7 @@ public class SignSearchManager {
             // 发送结果消息给玩家
             client = MinecraftClient.getInstance();
             if (client.player != null) {
-                client.player.sendMessage(Text.literal("找到 " + foundCount + " 个匹配的告示牌"), false);
+                client.player.sendMessage(Text.literal(I18nHelper.translate("textfinder.search.completed", foundCount)), false);
             }
         }
     }
@@ -236,13 +234,13 @@ public class SignSearchManager {
      */
     public void outputSearchResults(FabricClientCommandSource source, int page) {
         if (isSearching()) {
-            source.sendFeedback(Text.literal("§e搜索正在进行中... 已检查 " + getTotalSignsChecked() + " 个告示牌"));
+            source.sendFeedback(Text.literal(I18nHelper.translate("textfinder.command.display.searching", getTotalSignsChecked())));
             return;
         }
 
         List<SignData> results = getFoundSigns();
         if (results.isEmpty()) {
-            source.sendFeedback(Text.literal("§e未找到匹配的告示牌"));
+            source.sendFeedback(Text.literal(I18nHelper.translate("textfinder.command.display.no_results")));
             return;
         }
 
@@ -254,9 +252,9 @@ public class SignSearchManager {
             complexity = 2; // 默认简单模式
         }
 
-        // 复杂度4：显示进度信息（匹配日志中的"已找到2/4个告示牌"）
+        // 复杂度4：显示进度信息（仅显示每tick处理数量，进度将合并到结果标题中）
         if (complexity >= 4) {
-            source.sendFeedback(Text.literal("已找到" + results.size() + "/" + totalSignsChecked + "个告示牌"));
+            source.sendFeedback(Text.literal(I18nHelper.translate("textfinder.command.display.max_per_tick", TextFinder.config.getMaxSearchAmountPerTick())));
         }
 
         int pageSize = 10;
@@ -265,11 +263,12 @@ public class SignSearchManager {
         int endIndex = Math.min(startIndex + pageSize, totalResults);
 
         if (startIndex >= totalResults) {
-            source.sendFeedback(Text.literal("§e页数超出范围"));
+            source.sendFeedback(Text.literal(I18nHelper.translate("textfinder.command.display.page_out_of_range")));
             return;
         }
 
-        source.sendFeedback(Text.literal("§a找到 " + totalResults + " 个匹配的告示牌 (第" + page + "页):"));
+        // 显示已找到/已检查 的计数并附带页码
+        source.sendFeedback(Text.literal(I18nHelper.translate("textfinder.command.display.found_with_page", totalResults, totalSignsChecked, page)));
 
         for (int index = startIndex; index < endIndex; index++) {
             SignData sign = results.get(index);
@@ -277,7 +276,7 @@ public class SignSearchManager {
         }
 
         if (endIndex < totalResults) {
-            source.sendFeedback(Text.literal("§e还有 " + (totalResults - endIndex) + " 个结果未显示，使用 /td " + (page + 1) + " 查看下一页"));
+            source.sendFeedback(Text.literal("§e" + I18nHelper.translate("textfinder.command.display.more_results", totalResults - endIndex, page + 1)));
         }
     }
 
@@ -285,31 +284,31 @@ public class SignSearchManager {
      * 根据数字复杂度格式化单个告示牌信息
      */
     private Text formatSignText(SignData sign, int index, int complexity) {
-        BlockPos pos = sign.getPos();
+        BlockPos pos = sign.pos();
         StringBuilder sb = new StringBuilder();
-        sb.append("§b").append(index).append(". §r坐标: ").append(pos.toShortString());
+        sb.append("§b").append(index).append(". §r").append(I18nHelper.translate("textfinder.display.coordinate")).append(pos.toShortString());
 
         // 复杂度2及以上：显示首行文本
         if (complexity >= 2) {
-            String firstLine = sign.getFrontTexts().getFirst().getString();
-            if (firstLine.isEmpty() && !sign.getBackTexts().isEmpty()) {
-                firstLine = sign.getBackTexts().getFirst().getString();
+            String firstLine = sign.frontTexts().getFirst().getString();
+            if (firstLine.isEmpty() && !sign.backTexts().isEmpty()) {
+                firstLine = sign.backTexts().getFirst().getString();
             }
             sb.append(" §7").append(truncateText(firstLine, 20));
         }
 
         // 复杂度3及以上：显示更多文本行
         if (complexity >= 3) {
-            sb.append("\n  §f正面文本: ");
-            for (int i = 0; i < sign.getFrontTexts().size(); i++) {
-                String line = sign.getFrontTexts().get(i).getString();
+            sb.append("\n  §d").append(I18nHelper.translate("textfinder.display.front_text"));
+            for (int i = 0; i < sign.frontTexts().size(); i++) {
+                String line = sign.frontTexts().get(i).getString();
                 if (!line.isEmpty()) {
                     sb.append(line).append(" | ");
                 }
             }
-            sb.append("\n  §f背面文本: ");
-            for (int i = 0; i < sign.getBackTexts().size(); i++) {
-                String line = sign.getBackTexts().get(i).getString();
+            sb.append("\n  §d").append(I18nHelper.translate("textfinder.display.back_text"));
+            for (int i = 0; i < sign.backTexts().size(); i++) {
+                String line = sign.backTexts().get(i).getString();
                 if (!line.isEmpty()) {
                     sb.append(line).append(" | ");
                 }
@@ -318,9 +317,9 @@ public class SignSearchManager {
 
         // 复杂度4（调试模式）：显示完整信息
         if (complexity >= 4) {
-            sb.append("\n  §f发光状态: 正面=").append(sign.isFrontGlowing()).append(" 背面=").append(sign.isBackGlowing());
-            sb.append("\n  §f方块ID: ").append(sign.getBlockId())
-                    .append(" §f颜色: 正面=").append(sign.getFrontColor()).append(" 背面=").append(sign.getBackColor());
+            sb.append("\n  §f").append(I18nHelper.translate("textfinder.display.glow_status", sign.frontGlowing(), sign.backGlowing()));
+            sb.append("\n  §6").append(I18nHelper.translate("textfinder.display.block_id")).append(sign.blockId())
+                    .append(" §6").append(I18nHelper.translate("textfinder.display.color", sign.frontColor(), sign.backColor()));
         }
 
         return Text.literal(sb.toString());
@@ -342,7 +341,6 @@ public class SignSearchManager {
     public void clearFoundSigns() {
         foundSigns.clear();
         totalSignsChecked = 0;
-        totalSignsProcessed = 0;
         nextBlockEntityIndex = 0;
         chunkIterator = null;
         isSearching = false;
@@ -361,12 +359,4 @@ public class SignSearchManager {
         return totalSignsChecked;
     }
 
-    public int getTotalSignsProcessed() {
-        return totalSignsProcessed;
-    }
-
-    public String getCurrentSearchContext() {
-        return currentSearchContext;
-    }
 }
-

@@ -9,73 +9,14 @@ import java.util.List;
 
 /**
  * 存储单个告示牌的所有相关数据
+ *
+ * @param frontTexts 新增：存储BlockState
  */
-public class SignData {
-    private final BlockPos pos;
-    private final Block block;
-    private final int blockId;
-    private final BlockState state; // 新增：存储BlockState
-    private final List<Text> frontTexts;
-    private final String frontColor;
-    private final boolean frontGlowing;
-    private final List<Text> backTexts;
-    private final String backColor;
-    private final boolean backGlowing;
-
-    public SignData(BlockPos pos, BlockState state, List<Text> frontTexts, String frontColor, boolean frontGlowing,
+public record SignData(BlockPos pos, int blockId, List<Text> frontTexts, String frontColor, boolean frontGlowing,
+                       List<Text> backTexts, String backColor, boolean backGlowing) {
+    public SignData(BlockPos pos, BlockState blockId, List<Text> frontTexts, String frontColor, boolean frontGlowing,
                     List<Text> backTexts, String backColor, boolean backGlowing) {
-        this.pos = pos;
-        this.block = state.getBlock();
-        this.blockId = Block.getRawIdFromState(state);
-        this.state = state; // 新增：初始化BlockState
-        this.frontTexts = frontTexts;
-        this.frontColor = frontColor;
-        this.frontGlowing = frontGlowing;
-        this.backTexts = backTexts;
-        this.backColor = backColor;
-        this.backGlowing = backGlowing;
-    }
-
-    // 新增：获取BlockState的getter方法
-    public BlockState getState() {
-        return state;
-    }
-
-    // 其他现有getter方法保持不变...
-    public BlockPos getPos() {
-        return pos;
-    }
-
-    public Block getBlock() {
-        return block;
-    }
-
-    public int getBlockId() {
-        return blockId;
-    }
-
-    public List<Text> getFrontTexts() {
-        return frontTexts;
-    }
-
-    public String getFrontColor() {
-        return frontColor;
-    }
-
-    public boolean isFrontGlowing() {
-        return frontGlowing;
-    }
-
-    public List<Text> getBackTexts() {
-        return backTexts;
-    }
-
-    public String getBackColor() {
-        return backColor;
-    }
-
-    public boolean isBackGlowing() {
-        return backGlowing;
+        this(pos, Block.getRawIdFromState(blockId), frontTexts, frontColor, frontGlowing, backTexts, backColor, backGlowing);
     }
 
     // 其他现有方法保持不变...
@@ -95,12 +36,4 @@ public class SignData {
         return false;
     }
 
-    public List<Text> getMatchingTexts(String searchContext) {
-        for (Text text : frontTexts) {
-            if (text.getString().contains(searchContext)) {
-                return frontTexts;
-            }
-        }
-        return backTexts;
-    }
 }
