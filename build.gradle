@@ -79,7 +79,7 @@ publishing {
 loom {
 	runs {
 		client {
-			vmArgs("-Xmx1G", "-Xms512M")
+			vmArgs("-Xmx2G", "-Xms1024M")
 		}
 	}
 }
