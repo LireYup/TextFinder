@@ -129,26 +129,27 @@ public class TextFinderCommand {
 
         boolean hasClientCommands = FabricLoader.getInstance().isModLoaded("clientcommands");
         if (!hasClientCommands) {
-            source.sendFeedback(Text.literal("Clientcommands is not installed"));
+            source.sendFeedback(Text.literal("§c" + I18nHelper.translate("textfinder.command.tglow.no_clientcommands")));
             return 1;
         }
 
-        int n = 1;
+        int n;
         try {
             n = IntegerArgumentType.getInteger(context, "n");
         } catch (IllegalArgumentException ignored) {
+            n = 1;
         }
 
-        // Use found signs list rather than player position
+        // Use found signs list
         var manager = SignSearchManager.getInstance();
         var results = manager.getFoundSigns();
         if (results.isEmpty()) {
-            source.sendFeedback(Text.literal("No found signs to target"));
+            source.sendFeedback(Text.literal("§c" + I18nHelper.translate("textfinder.command.tglow.no_results")));
             return 1;
         }
 
         if (n < 1 || n > results.size()) {
-            source.sendFeedback(Text.literal("Index out of range: " + n + " (found " + results.size() + ")"));
+            source.sendFeedback(Text.literal("§c" + I18nHelper.translate("textfinder.command.tglow.index_out_of_range", n, results.size())));
             return 1;
         }
 
@@ -160,88 +161,20 @@ public class TextFinderCommand {
         int cGlowTime = TextFinder.config.getCGlowTime();
         String cGlowColor = TextFinder.config.getCGlowColor();
 
-        String cmd = String.format("/cglow block %d %d %d %d %s", x, y, z, cGlowTime, cGlowColor);
+        // sendCommand() expects raw command WITHOUT leading "/"
+        String cmd = String.format("cglow block %d %d %d %d color %s", x, y, z, cGlowTime, cGlowColor);
 
         try {
-            boolean executed = false;
-
-            // Try common client player methods via reflection
-            var player = source.getPlayer();
-            try {
-                var m = player.getClass().getMethod("sendChatMessage", String.class);
-                m.invoke(player, cmd);
-                executed = true;
-            } catch (NoSuchMethodException ignored) {
-            }
-
-            if (!executed) {
-                try {
-                    var m = player.getClass().getMethod("sendMessage", Text.class, boolean.class);
-                    m.invoke(player, Text.literal(cmd), true);
-                    executed = true;
-                } catch (NoSuchMethodException ignored) {
-                }
-            }
-
-            if (!executed) {
-                try {
-                    var m = player.getClass().getMethod("sendMessage", String.class);
-                    m.invoke(player, cmd);
-                    executed = true;
-                } catch (NoSuchMethodException ignored) {
-                }
-            }
-
-            if (!executed) {
-                try {
-                    var m = player.getClass().getMethod("sendMessage", net.minecraft.text.Text.class, boolean.class);
-                    m.invoke(player, Text.literal(cmd), true);
-                    executed = true;
-                } catch (NoSuchMethodException ignored) {
-                }
-            }
-
-            if (!executed) {
-                try {
-                    var m = player.getClass().getMethod("sendMessage", String.class);
-                    m.invoke(player, cmd);
-                    executed = true;
-                } catch (NoSuchMethodException ignored) {
-                }
-            }
-
-            // Fallback to network handler methods via reflection
-            if (!executed) {
-                try {
-                    var nh = MinecraftClient.getInstance().getNetworkHandler();
-                    if (nh != null) {
-                        try {
-                            var m2 = nh.getClass().getMethod("sendChatMessage", String.class);
-                            m2.invoke(nh, cmd);
-                            executed = true;
-                        } catch (NoSuchMethodException ignored) {
-                        }
-                        if (!executed) {
-                            try {
-                                var m3 = nh.getClass().getMethod("sendCommand", String.class);
-                                m3.invoke(nh, cmd);
-                                executed = true;
-                            } catch (NoSuchMethodException ignored) {
-                            }
-                        }
-                    }
-                } catch (Throwable t) {
-                    // ignore
-                }
-            }
-
-            if (executed) {
-                source.sendFeedback(Text.literal("Executed: " + cmd));
+            var networkHandler = MinecraftClient.getInstance().getNetworkHandler();
+            if (networkHandler != null) {
+                MinecraftClient.getInstance().getNetworkHandler().sendChatCommand(cmd);
+                source.sendFeedback(Text.literal("§a" + I18nHelper.translate("textfinder.command.tglow.success", n, sign.pos().toShortString())));
             } else {
-                source.sendFeedback(Text.literal("Failed to execute command: " + cmd));
+                source.sendFeedback(Text.literal("§c" + I18nHelper.translate("textfinder.command.tglow.not_connected")));
             }
         } catch (Exception e) {
-            source.sendFeedback(Text.literal("Failed to execute command: " + cmd));
+            TextFinder.LOGGER.error("Failed to send glow command", e);
+            source.sendFeedback(Text.literal("§c" + I18nHelper.translate("textfinder.command.tglow.failed")));
         }
 
         return 1;
