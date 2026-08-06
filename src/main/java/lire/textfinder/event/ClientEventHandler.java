@@ -3,9 +3,9 @@ package lire.textfinder.event;
 import lire.textfinder.TextFinder;
 import lire.textfinder.search.SignSearchManager;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.Text;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 
 /**
  * 客户端事件处理器，管理搜索过程和数据清除
@@ -13,22 +13,22 @@ import net.minecraft.text.Text;
 public class ClientEventHandler {
     public static void registerEvents() {
         // 世界加载时清除搜索结果
-        ServerWorldEvents.LOAD.register((server, world) -> {
-            if (MinecraftClient.getInstance().isOnThread()) {
+        ServerLevelEvents.LOAD.register((server, world) -> {
+            if (Thread.currentThread() == Minecraft.getInstance().getRunningThread()) {
                 SignSearchManager.getInstance().clearFoundSigns();
             }
         });
 
         // 世界卸载时清除搜索结果
-        ServerWorldEvents.UNLOAD.register((server, world) -> {
-            if (MinecraftClient.getInstance().isOnThread()) {
+        ServerLevelEvents.UNLOAD.register((server, world) -> {
+            if (Thread.currentThread() == Minecraft.getInstance().getRunningThread()) {
                 SignSearchManager.getInstance().clearFoundSigns();
             }
         });
 
         // 注册客户端Tick事件，处理搜索逻辑
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            if (client.world != null) {
+            if (client.level != null) {
                 SignSearchManager searchManager = SignSearchManager.getInstance();
                 if (searchManager.isSearching()) {
                     searchManager.tickSearch();
@@ -41,7 +41,7 @@ public class ClientEventHandler {
     /**
      * 处理调试模式下的进度输出
      */
-    private static void handleDebugOutput(SignSearchManager searchManager, MinecraftClient client) {
+    private static void handleDebugOutput(SignSearchManager searchManager, Minecraft client) {
         // 修复：调用标准驼峰方法名
         int outputComplexity = TextFinder.config.getOutputComplexity();
         if (outputComplexity == 4 && client.player != null) {
@@ -51,9 +51,8 @@ public class ClientEventHandler {
             if (totalChecked % debugInterval == 0 && totalChecked > 0) {
                 int found = searchManager.getFoundSigns().size();
                 // Use translatable text so the message is localized (was hardcoded Chinese)
-                client.player.sendMessage(
-                        Text.translatable("textfinder.command.display.found_progress", found, totalChecked),
-                        false
+                client.player.sendSystemMessage(
+                        Component.translatable("textfinder.command.display.found_progress", found, totalChecked)
                 );
             }
         }

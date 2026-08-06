@@ -1,9 +1,9 @@
 package lire.textfinder.data;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.text.Text;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.List;
 
@@ -12,23 +12,23 @@ import java.util.List;
  *
  * @param frontTexts 新增：存储BlockState
  */
-public record SignData(BlockPos pos, int blockId, List<Text> frontTexts, String frontColor, boolean frontGlowing,
-                       List<Text> backTexts, String backColor, boolean backGlowing) {
-    public SignData(BlockPos pos, BlockState blockId, List<Text> frontTexts, String frontColor, boolean frontGlowing,
-                    List<Text> backTexts, String backColor, boolean backGlowing) {
-        this(pos, Block.getRawIdFromState(blockId), frontTexts, frontColor, frontGlowing, backTexts, backColor, backGlowing);
+public record SignData(BlockPos pos, int blockId, List<Component> frontTexts, String frontColor, boolean frontGlowing,
+                       List<Component> backTexts, String backColor, boolean backGlowing) {
+    public SignData(BlockPos pos, BlockState blockId, List<Component> frontTexts, String frontColor, boolean frontGlowing,
+                    List<Component> backTexts, String backColor, boolean backGlowing) {
+        this(pos, Block.getId(blockId), frontTexts, frontColor, frontGlowing, backTexts, backColor, backGlowing);
     }
 
     // 其他现有方法保持不变...
     public boolean matches(String searchContext) {
         // 检查正面文本
-        for (Text text : frontTexts) {
+        for (Component text : frontTexts) {
             if (text.getString().contains(searchContext)) {
                 return true;
             }
         }
         // 检查背面文本
-        for (Text text : backTexts) {
+        for (Component text : backTexts) {
             if (text.getString().contains(searchContext)) {
                 return true;
             }

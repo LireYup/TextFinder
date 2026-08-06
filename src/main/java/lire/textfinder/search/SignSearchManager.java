@@ -3,15 +3,16 @@ package lire.textfinder.search;
 import lire.textfinder.I18nHelper;
 import lire.textfinder.TextFinder;
 import lire.textfinder.data.SignData;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.entity.SignBlockEntity;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.Text;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.world.chunk.ChunkStatus;
-import net.minecraft.world.chunk.WorldChunk;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.SignBlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 
 import java.util.ArrayList;
@@ -33,7 +34,7 @@ public class SignSearchManager {
     // 搜索是否正在进行中
     private boolean isSearching = false;
     // 记录下一个要搜索的区块迭代器
-    private Iterator<WorldChunk> chunkIterator;
+    private Iterator<LevelChunk> chunkIterator;
     // 记录当前区块中要搜索的方块实体索引
     private int nextBlockEntityIndex = 0;
 
@@ -56,10 +57,10 @@ public class SignSearchManager {
         this.currentSearchContext = searchContext;
         this.isSearching = true;
 
-        // 初始化区块迭代器（1.21.7兼容方式）
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.world != null && client.player != null) {
-            List<WorldChunk> loadedChunks = collectLoadedChunks(client);
+        // 初始化区块迭代器（26.2兼容方式）
+        Minecraft client = Minecraft.getInstance();
+        if (client.level != null && client.player != null) {
+            List<LevelChunk> loadedChunks = collectLoadedChunks(client);
             this.chunkIterator = loadedChunks.iterator();
         }
 
@@ -67,15 +68,15 @@ public class SignSearchManager {
     }
 
     /**
-     * 收集所有已加载的区块（1.21.7兼容实现）
+     * 收集所有已加载的区块（26.2兼容实现）
      */
-    private List<WorldChunk> collectLoadedChunks(MinecraftClient client) {
-        List<WorldChunk> chunks = new ArrayList<>();
-        if (client.world == null || client.player == null) return chunks;
+    private List<LevelChunk> collectLoadedChunks(Minecraft client) {
+        List<LevelChunk> chunks = new ArrayList<>();
+        if (client.level == null || client.player == null) return chunks;
 
         // 获取玩家所在区块
-        BlockPos playerPos = client.player.getBlockPos();
-        ChunkPos playerChunkPos = new ChunkPos(playerPos);
+        BlockPos playerPos = client.player.blockPosition();
+        ChunkPos playerChunkPos = ChunkPos.containing(playerPos);
 
         // 修复：调用标准驼峰方法名
         int renderDistance = TextFinder.config.getSearchRange();
@@ -84,14 +85,13 @@ public class SignSearchManager {
         for (int x = -renderDistance; x <= renderDistance; x++) {
             for (int z = -renderDistance; z <= renderDistance; z++) {
                 ChunkPos chunkPos = new ChunkPos(
-                        playerChunkPos.x + x,
-                        playerChunkPos.z + z
+                        playerChunkPos.x() + x,
+                        playerChunkPos.z() + z
                 );
-                // 获取区块（1.21.7兼容方式）
-                WorldChunk chunk = client.world.getChunkManager()
-                        .getChunk(chunkPos.x, chunkPos.z, ChunkStatus.FULL, false);
-                if (chunk != null) {
-                    chunks.add(chunk);
+                // 获取区块（26.2兼容方式）
+                ChunkAccess chunk = client.level.getChunk(chunkPos.x(), chunkPos.z(), ChunkStatus.FULL, false);
+                if (chunk instanceof LevelChunk levelChunk) {
+                    chunks.add(levelChunk);
                 }
             }
         }
@@ -114,8 +114,8 @@ public class SignSearchManager {
      * 继续搜索过程（每个游戏刻调用一次）
      */
     public void tickSearch() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (!isSearching || client.world == null || chunkIterator == null) {
+        Minecraft client = Minecraft.getInstance();
+        if (!isSearching || client.level == null || chunkIterator == null) {
             return;
         }
 
@@ -125,7 +125,7 @@ public class SignSearchManager {
 
         // 遍历区块
         while (chunkIterator.hasNext() && processedthistick < maxpertick) {
-            WorldChunk chunk = chunkIterator.next();
+            LevelChunk chunk = chunkIterator.next();
 
             // 获取区块中的所有方块实体
             List<BlockEntity> blockEntities = new ArrayList<>(chunk.getBlockEntities().values());
@@ -167,9 +167,9 @@ public class SignSearchManager {
             TextFinder.LOGGER.info("Search completed. Found {} matching signs.", foundCount);
 
             // 发送结果消息给玩家
-            client = MinecraftClient.getInstance();
+            client = Minecraft.getInstance();
             if (client.player != null) {
-                client.player.sendMessage(Text.literal(I18nHelper.translate("textfinder.search.completed", foundCount)), false);
+                client.player.sendSystemMessage(Component.literal(I18nHelper.translate("textfinder.search.completed", foundCount)));
             }
         }
     }
@@ -178,17 +178,17 @@ public class SignSearchManager {
      * 从告示牌方块实体创建SignData对象
      */
     private SignData createSignData(SignBlockEntity sign) {
-        BlockPos pos = sign.getPos();
-        BlockState state = sign.getCachedState();
+        BlockPos pos = sign.getBlockPos();
+        BlockState state = sign.getBlockState();
 
         // 获取正反面文本
-        List<Text> frontTexts = List.of(
+        List<Component> frontTexts = List.of(
                 sign.getFrontText().getMessage(0, false),
                 sign.getFrontText().getMessage(1, false),
                 sign.getFrontText().getMessage(2, false),
                 sign.getFrontText().getMessage(3, false)
         );
-        List<Text> backTexts = List.of(
+        List<Component> backTexts = List.of(
                 sign.getBackText().getMessage(0, false),
                 sign.getBackText().getMessage(1, false),
                 sign.getBackText().getMessage(2, false),
@@ -206,10 +206,10 @@ public class SignSearchManager {
                 state,
                 frontTexts,
                 frontColor,
-                sign.getFrontText().isGlowing(),
+                sign.getFrontText().hasGlowingText(),
                 backTexts,
                 backColor,
-                sign.getBackText().isGlowing()
+                sign.getBackText().hasGlowingText()
         );
     }
 
@@ -234,13 +234,13 @@ public class SignSearchManager {
      */
     public void outputSearchResults(FabricClientCommandSource source, int page) {
         if (isSearching()) {
-            source.sendFeedback(Text.literal(I18nHelper.translate("textfinder.command.display.searching", getTotalSignsChecked())));
+            source.sendFeedback(Component.literal(I18nHelper.translate("textfinder.command.display.searching", getTotalSignsChecked())));
             return;
         }
 
         List<SignData> results = getFoundSigns();
         if (results.isEmpty()) {
-            source.sendFeedback(Text.literal(I18nHelper.translate("textfinder.command.display.no_results")));
+            source.sendFeedback(Component.literal(I18nHelper.translate("textfinder.command.display.no_results")));
             return;
         }
 
@@ -254,7 +254,7 @@ public class SignSearchManager {
 
         // 复杂度4：显示进度信息（仅显示每tick处理数量，进度将合并到结果标题中）
         if (complexity >= 4) {
-            source.sendFeedback(Text.literal(I18nHelper.translate("textfinder.command.display.max_per_tick", TextFinder.config.getMaxSearchAmountPerTick())));
+            source.sendFeedback(Component.literal(I18nHelper.translate("textfinder.command.display.max_per_tick", TextFinder.config.getMaxSearchAmountPerTick())));
         }
 
         int pageSize = 10;
@@ -263,12 +263,12 @@ public class SignSearchManager {
         int endIndex = Math.min(startIndex + pageSize, totalResults);
 
         if (startIndex >= totalResults) {
-            source.sendFeedback(Text.literal(I18nHelper.translate("textfinder.command.display.page_out_of_range")));
+            source.sendFeedback(Component.literal(I18nHelper.translate("textfinder.command.display.page_out_of_range")));
             return;
         }
 
         // 显示已找到/已检查 的计数并附带页码
-        source.sendFeedback(Text.literal(I18nHelper.translate("textfinder.command.display.found_with_page", totalResults, totalSignsChecked, page)));
+        source.sendFeedback(Component.literal(I18nHelper.translate("textfinder.command.display.found_with_page", totalResults, totalSignsChecked, page)));
 
         for (int index = startIndex; index < endIndex; index++) {
             SignData sign = results.get(index);
@@ -276,14 +276,14 @@ public class SignSearchManager {
         }
 
         if (endIndex < totalResults) {
-            source.sendFeedback(Text.literal("§e" + I18nHelper.translate("textfinder.command.display.more_results", totalResults - endIndex, page + 1)));
+            source.sendFeedback(Component.literal("§e" + I18nHelper.translate("textfinder.command.display.more_results", totalResults - endIndex, page + 1)));
         }
     }
 
     /**
      * 根据数字复杂度格式化单个告示牌信息
      */
-    private Text formatSignText(SignData sign, int index, int complexity) {
+    private Component formatSignText(SignData sign, int index, int complexity) {
         BlockPos pos = sign.pos();
         StringBuilder sb = new StringBuilder();
         sb.append("§b").append(index).append(". §r").append(I18nHelper.translate("textfinder.display.coordinate")).append(pos.toShortString());
@@ -322,7 +322,7 @@ public class SignSearchManager {
                     .append(" §6").append(I18nHelper.translate("textfinder.display.color", sign.frontColor(), sign.backColor()));
         }
 
-        return Text.literal(sb.toString());
+        return Component.literal(sb.toString());
     }
 
     /**
